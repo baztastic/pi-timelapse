@@ -60,6 +60,7 @@ def capture_image():
         global image_number
 
         now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        print(now + " - Capturing image " + str(image_number) + " of " + str(config['total_images']))
 
         # Set a timer to take another picture at the proper interval after this
         # picture is taken.
@@ -69,29 +70,13 @@ def capture_image():
         # Start up the camera.
         camera = PiCamera()
         set_camera_options(camera)
-        print(now + " - Capturing image " + str(image_number) + " of " + str(config['total_images'])) # + " iso: " + str(camera.iso) + " shutter: " + str(camera.shutter_speed))
 
         # Capture a picture.
         camera.capture(dir + '/image{0:08d}.jpg'.format(image_number))
         camera.close()
-        # html = \ #"<h3>" + str(image_number) + " " + now + "</h3>\n<img src='image.jpg'>"
-        html = """
-        <html>
-        <head>
-        <link rel="stylesheet" href='/static/style.css' />
-        </head>
-        <body>
-        <h3>
-        """ + \
-        str(image_number) + " " + now +"</h3>" + \
-        """
-        <!--<img src="{{ image }}">-->
-        <img src="../static/images/image.jpg">
-        </body>
-        </html>
-        """
-        copyfile(dir + '/image{0:08d}.jpg'.format(image_number), 'static/images/image.jpg')
-        os.system("echo '" + html + "' > templates/timelapse.html")
+        html = "<h3>" + str(image_number) + " " + now + "</h3>\n<img src='image.jpg'>"
+        copyfile(dir + '/image{0:08d}.jpg'.format(image_number), 'image.jpg')
+        os.system("echo '" + html + "' > timelapse.html")
 
         if (image_number < (config['total_images'] - 1)):
             image_number += 1
@@ -121,19 +106,34 @@ def create_video():
     subprocess.Popen(args=['ffmpeg -framerate 20 -i ' + dir + '/image%08d.jpg -vf format=yuv420p ' + dir + '-timelapse.mp4'], shell = True)  # noqa
 
 
-#Initialize the path for files to be saved
-dir_path = (str(config['dir_path']))
+for iso in [60,100,200,400,800]:
+    config['iso'] = iso
+    for spd in [6000000, 1000000, 125000, 66666, 33333, 16666, 8000, 4000, 2000, 1000, 500]:
+        config['shutter_speed'] = spd
+        #Initialize the path for files to be saved
+        dir_path = (str(config['dir_path']))
 
-# Create directory based on current timestamp.
-dir = os.path.join(
-    sys.path[0],
-    str(dir_path) +'series-' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-)
-# Create directory with current time stamp
-create_timestamped_dir(dir)
+        # Create directory based on current timestamp.
+        dir = os.path.join(
+            sys.path[0],
+            str(dir_path) +'series-' + datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        )
+        # Create directory with current time stamp
+#        create_timestamped_dir(dir)
 
-# Print where the files will be saved
-print("\nFiles will be saved in: " + str(dir) + "\n")
+        # Print where the files will be saved
+#        print("\nFiles will be saved in: " + str(dir) + "\n")
 
-# Kick off the capture process.
-capture_image()
+        # Kick off the capture process.
+#        capture_image()
+
+        # Start up the camera.
+        print("Trying iso:", str(iso), "shutter_speed:", str(spd))
+        camera = PiCamera()
+        set_camera_options(camera)
+
+        # Capture a picture.
+#        camera.capture(dir + '/image{0:08d}.jpg'.format(image_number))
+        camera.capture('iso' + str(iso) + '-spd' + str(spd) + '.jpg')
+        camera.close()
+        sleep(10)
